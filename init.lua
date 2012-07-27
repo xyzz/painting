@@ -11,7 +11,7 @@
 -- this texture is created by minetest-c55's internal image
 -- compositing engine (see tile.cpp).
 
---dofile(minetest.get_modpath("painting").."/crafting.lua")
+dofile(minetest.get_modpath("painting").."/crafts.lua")
 
 textures = {
    white = "white.png", yellow = "yellow.png", 
@@ -177,7 +177,7 @@ canvasnode = {
                           z = pos.z + dir.z}
             
             local p = "painting:pixel_"..grid[x][y]
-            p =  minetest.env:add_entity(np, pix):get_luaentity()
+            p =  minetest.env:add_entity(np, p):get_luaentity()
             p.object:setyaw(math.pi*fd/-2)
             p.pos={x=x, y=y}
             p.name="easel"
