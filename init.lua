@@ -17,7 +17,7 @@ textures = {
    white = "white.png", yellow = "yellow.png", 
    orange = "orange.png", red = "red.png", 
    violet = "violet.png", blue = "blue.png", 
-   green= " green.png", magenta = "pink.png", 
+   green = "green.png", magenta = "pink.png", 
    cyan = "cyan.png", lightgrey = "lightgrey.png",
    darkgrey = "darkgrey.png", black = "black.png" 
 }   
