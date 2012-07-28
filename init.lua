@@ -73,9 +73,10 @@ picent = {
       local meta = minetest.env:get_meta(pos)
       local data = meta:get_string("painting:picturedata")
 
-      if data then
-         self.object:set_properties({textures = { data }})
-      end
+      if not data then return end
+      data = minetest.deserialize(data)
+      data = to_imagestring(data)
+      self.object:set_properties({textures = { data }})
    end
 }
 
@@ -86,7 +87,6 @@ paintedcanvas = {
    
    on_place = function(itemstack, placer, pointed_thing)
       local data = itemstack:get_metadata()
-      local pos = pointed_thing.above
 
       --place node
       local placerpos = placer:getpos()
@@ -113,6 +113,9 @@ paintedcanvas = {
          x = pos.x+dir.x*off,
          y = pos.y,
          z = pos.z+dir.z*off}
+      
+      data = minetest.deserialize(itemstack:get_metadata())
+      data = to_imagestring(data)
       
       local p = minetest.env:add_entity(np, "painting:picent"):get_luaentity()
       p.object:set_properties({textures = { data }})
@@ -176,7 +179,7 @@ canvasnode = {
                           y = pos.y + (0.5-1/(res*2)) - y/res,
                           z = pos.z + dir.z}
             
-            local p = "painting:pixel_"..grid[x][y]
+            local p = "painting:pixel_white"
             p =  minetest.env:add_entity(np, p):get_luaentity()
             p.object:setyaw(math.pi*fd/-2)
             p.pos={x=x, y=y}
@@ -186,18 +189,17 @@ canvasnode = {
    end,
    
    after_dig_node=function(pos, oldnode, oldmetadata, digger)
-      --this is the imagestring that creates the texture
-      local data = "[combine:"..res.."x"..res..":"
+      local data = {}
       for y=0,res-1 do
          for x=0, res-1 do               
-            data  = data..x..","..y.."="..grid[x][y]..".png:"
+            table.insert(data, grid[x][y] )
          end
       end
       
       local easel = { x = pos.x, y = pos.y - 1, z = pos.z }
       minetest.env:get_meta(easel):set_int("has_canvas", 0) 
-      
-      local item = { name = "painting:paintedcanvas", count = 1, metadata = data }
+
+      local item = { name = "painting:paintedcanvas", count = 1, metadata = minetest.serialize(data) }
       digger:get_inventory():add_item("main", item)
       
       --clean up pixels
@@ -282,8 +284,7 @@ pixel = {
    on_punch = function(self, hitter)
       local name = hitter:get_wielded_item():get_name()
       name = string.split(name, "_")[2]
-
-      grid[self.pos.x][self.pos.y]=name
+      grid[self.pos.x][self.pos.y]=colors[name]
 
       local p = textures[name]
       if p then
@@ -320,9 +321,18 @@ minetest.register_node("painting:canvasnode", canvasnode)
 
 minetest.register_node("painting:easel", easel)
 
-for color, texture in pairs(textures) do
+colors = {}
+revcolors = {}
+
+for color, _ in pairs(textures) do
+   table.insert(revcolors, color)
+   
    minetest.register_entity("painting:pixel_"..color, pixel)
    minetest.register_tool("painting:brush_"..color, brush)
+end
+
+for i, color in ipairs(revcolors) do
+   colors[color] = i
 end
 
 minetest.register_alias('easel', 'painting:easel')
@@ -333,9 +343,22 @@ function initgrid()
    for x = 0, res-1 do
       grid[x] = {}
       for y = 0, res-1 do
-         grid[x][y] = "white"
+         grid[x][y] = colors["white"]
       end
    end
+end
+
+function to_imagestring(data)
+   if not data then return end
+   local imagestring = "[combine:"..res.."x"..res..":"
+   local i = 1
+   for y = 0, res-1 do
+      for x = 0, res-1 do
+         imagestring  = imagestring..x..","..y.."="..revcolors[data[i]]..".png:"
+         i = i + 1
+      end
+   end
+   return imagestring
 end
 
 initgrid()
