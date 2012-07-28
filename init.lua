@@ -158,6 +158,7 @@ canvasnode = {
    on_construct = function(pos)
       local node =  minetest.env:get_node(pos)
       local fd = node.param2
+      local master
       
       for y = 0, res-1 do
          for x = 0, res-1 do
@@ -181,6 +182,16 @@ canvasnode = {
             
             local p = "painting:pixel_white"
             p =  minetest.env:add_entity(np, p):get_luaentity()
+            if x==0 and y == 0 then
+               p.grid = initgrid()
+               master = p
+               --p.parent = p
+               --print(dump(master))
+            else
+               p.grid = nil
+               --p.parent = master
+            end
+            p.parent = master
             p.object:setyaw(math.pi*fd/-2)
             p.pos={x=x, y=y}
             p.name="easel"
@@ -189,26 +200,22 @@ canvasnode = {
    end,
    
    after_dig_node=function(pos, oldnode, oldmetadata, digger)
-      local data = {}
-      for y=0,res-1 do
-         for x=0, res-1 do               
-            table.insert(data, grid[x][y] )
-         end
-      end
-      
-      local easel = { x = pos.x, y = pos.y - 1, z = pos.z }
-      minetest.env:get_meta(easel):set_int("has_canvas", 0) 
-
-      local item = { name = "painting:paintedcanvas", count = 1, metadata = minetest.serialize(data) }
-      digger:get_inventory():add_item("main", item)
-      
-      --clean up pixels
-      initgrid()
+      --get data and remove pixels
+      local data
       local objects = minetest.env:get_objects_inside_radius(pos, 1)
       for _, e in ipairs(objects) do
-         if e:get_luaentity().name == "easel" then
-            e:remove()
+         e = e:get_luaentity()
+         if e.name == "easel" then
+            if e.grid then
+               data = e.grid
+            end
+            e.object:remove()
          end
+      end
+
+      if data then
+         local item = { name = "painting:paintedcanvas", count = 1, metadata = minetest.serialize(data) }
+         digger:get_inventory():add_item("main", item)
       end
    end
 }
@@ -285,8 +292,9 @@ pixel = {
    on_punch = function(self, hitter)
       local name = hitter:get_wielded_item():get_name()
       name = string.split(name, "_")[2]
-      grid[self.pos.x][self.pos.y]=colors[name]
 
+      self.parent.grid[self.pos.x][self.pos.y]=colors[name]
+      
       local p = textures[name]
       if p then
          self.object:set_properties({textures = { p, p, p, p, p, p }})
@@ -340,26 +348,23 @@ minetest.register_alias('easel', 'painting:easel')
 minetest.register_alias('canvas', 'painting:canvas')
 
 function initgrid()
-   grid = {}
+   local grid, x, y = {}
    for x = 0, res-1 do
       grid[x] = {}
       for y = 0, res-1 do
          grid[x][y] = colors["white"]
       end
    end
+   return grid
 end
 
 function to_imagestring(data)
    if not data then return end
    local imagestring = "[combine:"..res.."x"..res..":"
-   local i = 1
    for y = 0, res-1 do
       for x = 0, res-1 do
-         imagestring  = imagestring..x..","..y.."="..revcolors[data[i]]..".png:"
-         i = i + 1
+         imagestring  = imagestring..x..","..y.."="..revcolors[ data[x][y] ]..".png:"
       end
    end
    return imagestring
 end
-
-initgrid()
