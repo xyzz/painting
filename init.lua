@@ -204,9 +204,10 @@ canvasnode = {
       
       --clean up pixels
       initgrid()
-      for _, e in pairs(minetest.luaentities) do
-         if e.name == "easel" then
-            e.object:remove()
+      local objects = minetest.env:get_objects_inside_radius(pos, 1)
+      for _, e in ipairs(objects) do
+         if e:get_luaentity().name == "easel" then
+            e:remove()
          end
       end
    end
