@@ -28,7 +28,7 @@ thickness = 0.1
 -- picture node
 picbox = {
    type = "fixed",
-   fixed = { -0.5, -0.5, 0.5, 0.5, 0.5, 0.5 - thickness }
+   fixed = { -0.499, -0.499, 0.499, 0.499, 0.499, 0.499 - thickness }
 }
 
 picnode =  {                                                    
