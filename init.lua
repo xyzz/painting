@@ -155,7 +155,7 @@ canvasnode = {
       local node =  minetest.env:get_node(pos)
       local fd = node.param2
       local dir = dirs.x[fd]
-      local off = -(0.5 - 1/res*2)
+      local off = -(0.5 - 1/(res*2))
       local master
       
       for y = 0, res-1 do
