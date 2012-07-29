@@ -86,8 +86,6 @@ paintedcanvas = {
    stack_max = 1,
    
    on_place = function(itemstack, placer, pointed_thing)
-      local data = itemstack:get_metadata()
-
       --place node
       local placerpos = placer:getpos()
       local pos = pointed_thing.above
@@ -98,19 +96,20 @@ paintedcanvas = {
                                                param2 = fd,
                                                paramtype2 = 'none' })
       
+      --save metadata
+      local data = itemstack:get_metadata()
       local meta = minetest.env:get_meta(pos)
       meta:set_string("painting:picturedata", data)
 
-      --and entity
-      local dir = dirs.z[fd]
+      --add entity
+      dir = dirs.z[fd]
       local off = 0.5-thickness-0.01
       
-      local np = {
-         x = pos.x + dir.x*off,
-         y = pos.y,
-         z = pos.z + dir.z*off}
+      local np = { x = pos.x + dir.x*off,
+                   y = pos.y,
+                   z = pos.z + dir.z*off}
       
-      data = minetest.deserialize(itemstack:get_metadata())
+      data = minetest.deserialize(data)
       data = to_imagestring(data)
       
       local p = minetest.env:add_entity(np, "painting:picent"):get_luaentity()
@@ -352,12 +351,12 @@ end
 
 dirs = { 
    x = {
-      [0] = {x=1, z=0},             --x
-      [1] = {x=0, z=-1},
-      [2] = {x=-1, z=0},
-      [3] = {x=0, z=1}},
+      [0] = {x = 1, z = 0},
+      [1] = {x = 0, z =-1},
+      [2] = {x =-1, z = 0},
+      [3] = {x = 0, z = 1}},
    z = {
-      [0] = {x=0, z=1},             --z
-      [1] = {x=1, z=0},
-      [2] = {x=0, z=-1},
-      [3] = {x=-1, z=0}}}
+      [0] = {x = 0, z = 1},
+      [1] = {x = 1, z = 0},
+      [2] = {x = 0, z =-1},
+      [3] = {x =-1, z = 0}}}
