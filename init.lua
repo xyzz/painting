@@ -102,7 +102,7 @@ paintedcanvas = {
       meta:set_string("painting:picturedata", data)
 
       --add entity
-      dir = dirs.z[fd]
+      dir = dirs[fd]
       local off = 0.5-thickness-0.01
       
       local np = { x = pos.x + dir.x*off,
@@ -153,7 +153,7 @@ canvasnode = {
    on_construct = function(pos)
       local node =  minetest.env:get_node(pos)
       local fd = node.param2
-      local dir = dirs.x[fd]
+      local dir = dirs[(fd + 1) % 4]
       local off = -(0.5 - 1/(res*2))
       local master
       
@@ -349,14 +349,8 @@ function to_imagestring(data)
    return imagestring
 end
 
-dirs = { 
-   x = {
-      [0] = {x = 1, z = 0},
-      [1] = {x = 0, z =-1},
-      [2] = {x =-1, z = 0},
-      [3] = {x = 0, z = 1}},
-   z = {
-      [0] = {x = 0, z = 1},
-      [1] = {x = 1, z = 0},
-      [2] = {x = 0, z =-1},
-      [3] = {x =-1, z = 0}}}
+dirs = {
+   [0] = {x = 0, z = 1},
+   [1] = {x = 1, z = 0},
+   [2] = {x = 0, z =-1},
+   [3] = {x =-1, z = 0} }
