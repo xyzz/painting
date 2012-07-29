@@ -7,7 +7,7 @@
 -- 2012 obneq aka jin xi
 
 -- a picture is drawn using a node(box) to draw the supporting canvas
--- and an entity which has the painting as its texture.
+-- and an entity which has the painting as it's texture.
 -- this texture is created by minetest-c55's internal image
 -- compositing engine (see tile.cpp).
 
@@ -32,12 +32,12 @@ picbox = {
 }
 
 picnode =  {                                                    
-   description = 'pic',                          
+   description = "pic",                          
    tiles = { "white.png" },
    inventory_image = "painted.png",
    drawtype = "nodebox",
    sunlight_propagates = true,
-   paramtype = 'light',
+   paramtype = "light",
    paramtype2 = "facedir",
    node_box = picbox,
    selection_box = picbox,
@@ -94,7 +94,7 @@ paintedcanvas = {
 
       local pic = minetest.env:add_node(pos, { name = "painting:pic",
                                                param2 = fd,
-                                               paramtype2 = 'none' })
+                                               paramtype2 = "none" })
       
       --save metadata
       local data = itemstack:get_metadata()
@@ -133,12 +133,12 @@ canvasbox = {
 }
 
 canvasnode = {
-   description = 'canvas',
+   description = "canvas",
    tiles = { "white.png" },
    inventory_image = "painted.png",
    drawtype = "nodebox",
    sunlight_propagates = true,
-   paramtype = 'light',
+   paramtype = "light",
    paramtype2 = "facedir",
    node_box = canvasbox,
    selection_box = canvasbox,
@@ -216,11 +216,11 @@ easelbox = {
 }
 
 easel = {
-   description = 'easel',
+   description = "easel",
    tiles = { "default_wood.png" },
    drawtype = "nodebox",
    sunlight_propagates = true,
-   paramtype = 'light',
+   paramtype = "light",
    paramtype2 = "facedir",
    node_box = easelbox,
    selection_box = easelbox,
@@ -229,7 +229,7 @@ easel = {
    
    on_punch = function(pos, node, player)
       local wielded = player:get_wielded_item():get_name()
-      if wielded ~= 'painting:canvas' then
+      if wielded ~= "painting:canvas" then
          return
       end    
       local meta = minetest.env:get_meta(pos)       
@@ -238,7 +238,7 @@ easel = {
       if minetest.env:get_node(np).name == "air" then 
          minetest.env:add_node(np, { name = "painting:canvasnode",
                                      param2 = node["param2"],
-                                     paramtype2 = 'none' })
+                                     paramtype2 = "none" })
       end
       
       meta:set_int("has_canvas", 1)
@@ -324,8 +324,8 @@ for i, color in ipairs(revcolors) do
    colors[color] = i
 end
 
-minetest.register_alias('easel', 'painting:easel')
-minetest.register_alias('canvas', 'painting:canvas')
+minetest.register_alias("easel", "painting:easel")
+minetest.register_alias("canvas", "painting:canvas")
 
 function initgrid()
    local grid, x, y = {}
