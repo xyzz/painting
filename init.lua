@@ -102,17 +102,13 @@ paintedcanvas = {
       meta:set_string("painting:picturedata", data)
 
       --and entity
-      local dirs = {[0] = {x=0, z=1},
-                    [1] = {x=1, z=0},
-                    [2] = {x=0, z=-1},
-                    [3] = {x=-1, z=0}}
-      local dir=dirs[fd]
+      local dir = dirs.z[fd]
       local off = 0.5-thickness-0.01
       
       local np = {
-         x = pos.x+dir.x*off,
+         x = pos.x + dir.x*off,
          y = pos.y,
-         z = pos.z+dir.z*off}
+         z = pos.z + dir.z*off}
       
       data = minetest.deserialize(itemstack:get_metadata())
       data = to_imagestring(data)
@@ -158,38 +154,23 @@ canvasnode = {
    on_construct = function(pos)
       local node =  minetest.env:get_node(pos)
       local fd = node.param2
+      local dir = dirs.x[fd]
+      local off = -(0.5 - 1/res*2)
       local master
       
       for y = 0, res-1 do
          for x = 0, res-1 do
-            local xstep = x/res
-            local off = 1/(res*2)
-            
-            local boff = 0.01-off
-            
-            local dirs2 = {
-               [0] = { x =-0.5 + off + xstep, z = 0 - boff },
-               [1] = { x = 0 - boff, z = 0.5 - off - xstep },
-               [2] = { x = 0.5 - off - xstep, z = 0 + boff },
-               [3] = { x = 0 + boff, z =-0.5 + off + xstep },
-            }
-            
-            local dir = dirs2[fd]
-            
-            local np = {x = pos.x + dir.x,
-                          y = pos.y + (0.5-1/(res*2)) - y/res,
-                          z = pos.z + dir.z}
+            local np = { x = pos.x + off*dir.x + x/res*dir.x,
+                         y = pos.y - off - y/res,
+                         z = pos.z + off*dir.z + x/res*dir.z }
             
             local p = "painting:pixel_white"
             p =  minetest.env:add_entity(np, p):get_luaentity()
             if x==0 and y == 0 then
                p.grid = initgrid()
                master = p
-               --p.parent = p
-               --print(dump(master))
             else
                p.grid = nil
-               --p.parent = master
             end
             p.parent = master
             p.object:setyaw(math.pi*fd/-2)
@@ -368,3 +349,15 @@ function to_imagestring(data)
    end
    return imagestring
 end
+
+dirs = { 
+   x = {
+      [0] = {x=1, z=0},             --x
+      [1] = {x=0, z=-1},
+      [2] = {x=-1, z=0},
+      [3] = {x=0, z=1}},
+   z = {
+      [0] = {x=0, z=1},             --z
+      [1] = {x=1, z=0},
+      [2] = {x=0, z=-1},
+      [3] = {x=-1, z=0}}}
