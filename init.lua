@@ -63,21 +63,62 @@ picnode =  {
 }
 
 -- picture texture entity
+
+paintbox1 = { -0.5,-0.5,0,0.5,0.5,0 }
+paintbox2 = { 0,-0.5,-0.5,0,0.5,0.5 }
+
 picent = {
-   collisionbox = { 0,0,0,0,0,0 },
+   collisionbox = { 0, 0, 0, 0, 0, 0 },
    visual = "upright_sprite",
    textures = { "white.png" },
 
-   on_activate = function(self, staticdata)
+   on_punch = function(self, puncher, time_from_last_punch, tool_capabilities, dir)
+      local ppos = puncher:getpos()
+      --get player eye level
+      ppos = { x = ppos.x, y = ppos.y+(1.5 + 1/16), z = ppos.z }
+
+      local pos = self.object:getpos()
+      local l = puncher:get_look_dir()
+
+      local d = dirs[self.fd]
+      local od = dirs[(self.fd + 1) % 4]
+      local normal = { x = d.x, y = 0, z = d.z }
+      local p = intersect(ppos, l, pos, normal)
+      
+      local off = -0.5
+      pos = { x = pos.x + off * od.x, y=pos.y + off, z=pos.z + off * od.z }
+      p = sub(p, pos)
+      local x = math.abs(p.x + p.z)
+      local y = p.y
+
+      x = round(x/(1/res))
+      y = round((1-y)/(1/res))
+
+      x = clamp(x)
+      y = clamp(y-1)
+
+      local name = puncher:get_wielded_item():get_name()
+      name = string.split(name, "_")[2]
+      local t = textures[name]
+      if t then
+         self.grid[x][y]=colors[name]
+         self.object:set_properties({textures = { to_imagestring(self.grid) }})
+      end
+   end,
+
+  on_activate = function(self, staticdata)
       local pos = self.object:getpos()
       local meta = minetest.env:get_meta(pos)
       local data = meta:get_string("painting:picturedata")
 
-      if not data then return end
-      data = minetest.deserialize(data)
-      data = to_imagestring(data)
-      self.object:set_properties({textures = { data }})
-   end
+      if data == "" then
+         self.grid = initgrid()
+      else
+         data = minetest.deserialize(data)
+         data = to_imagestring(data)
+         self.object:set_properties({textures = { data }})
+      end
+  end
 }
 
 --paintedcanvas picture inventory item
@@ -145,52 +186,34 @@ canvasnode = {
    groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2 },
 
    drop = "",
-      
-   can_dig = function ()
-      return true
-   end,
-   
+
    on_construct = function(pos)
-      local node =  minetest.env:get_node(pos)
-      local fd = node.param2
-      local dir = dirs[(fd + 1) % 4]
-      local off = -(0.5 - 1/(res*2))
-      local master
-      
-      for y = 0, res-1 do
-         for x = 0, res-1 do
-            local np = { x = pos.x + off*dir.x + x/res*dir.x,
-                         y = pos.y - off - y/res,
-                         z = pos.z + off*dir.z + x/res*dir.z }
-            
-            local p = "painting:pixel_white"
-            p =  minetest.env:add_entity(np, p):get_luaentity()
-            if x==0 and y == 0 then
-               p.grid = initgrid()
-               master = p
-            else
-               p.grid = nil
-            end
-            p.parent = master
-            p.object:setyaw(math.pi*fd/-2)
-            p.pos={x=x, y=y}
-            p.name="easel"
-         end
+      local easel = minetest.env:get_node({ x = pos.x, y = pos.y - 1, z = pos.z})
+      local fd = easel.param2
+      local dir = dirs[fd]
+      pos = {x = pos.x - 0.01 * dir.x, y = pos.y, z = pos.z - 0.01 * dir.z}
+
+      local p = minetest.env:add_entity(pos, "painting:picent"):get_luaentity()
+      p.object:setyaw(math.pi*easel.param2/-2)
+      p.fd = easel.param2
+      p.grid = initgrid()
+      if fd == 0 or fd == 2 then 
+         p.object:set_properties({ collisionbox = paintbox1 })
+      else
+         p.object:set_properties({ collisionbox = paintbox2 })
       end
    end,
-   
+
    after_dig_node=function(pos, oldnode, oldmetadata, digger)
       --get data and remove pixels
       local data
-      local objects = minetest.env:get_objects_inside_radius(pos, 1)
+      local objects = minetest.env:get_objects_inside_radius(pos, 0.5)
       for _, e in ipairs(objects) do
          e = e:get_luaentity()
-         if e.name == "easel" then
-            if e.grid then
-               data = e.grid
-            end
-            e.object:remove()
+         if e.grid then
+            data = e.grid
          end
+         e.object:remove()
       end
 
       if data then
@@ -243,7 +266,7 @@ easel = {
       
       meta:set_int("has_canvas", 1)
       local itemstack = ItemStack("painting:canvas")
-      player:get_inventory():remove_item("main", itemstack)   
+      player:get_inventory():remove_item("main", itemstack)  
    end,
    
    can_dig = function(pos,player)
@@ -257,30 +280,7 @@ easel = {
    end
 }
 
---pixel and brushes
-local c = 1/(res*2)
-local p = "white.png"
-
-pixel = {
-   physical = true,
-   collisionbox = { -c, -c, -c, c, c, c },
-   visual = "cube",
-   textures = { p, p, p, p, p, p },
-   visual_size = { x = 1/res, y = 1/res },
-   automatic_rotate = false,
-   
-   on_punch = function(self, hitter)
-      local name = hitter:get_wielded_item():get_name()
-      name = string.split(name, "_")[2]
-
-      self.parent.grid[self.pos.x][self.pos.y]=colors[name]
-      
-      local p = textures[name]
-      if p then
-         self.object:set_properties({textures = { p, p, p, p, p, p }})
-      end
-   end
-}
+--brushes
 
 brush = {                  
    description = "brush",
@@ -292,12 +292,7 @@ brush = {
    tool_capabilities = {
       full_punch_interval = 1.0,
       max_drop_level=0,
-      groupcaps={
-         -- For example:
-         fleshy={times={[2]=0.80, [3]=0.40}, maxwear=0.05, maxlevel=1},
-         snappy={times={[2]=0.80, [3]=0.40}, maxwear=0.05, maxlevel=1},
-         choppy={times={[3]=0.90}, maxwear=0.05, maxlevel=0}
-      }
+      groupcaps = {}
    }
 }
 
@@ -316,7 +311,6 @@ revcolors = {}
 for color, _ in pairs(textures) do
    table.insert(revcolors, color)
    
-   minetest.register_entity("painting:pixel_"..color, pixel)
    minetest.register_tool("painting:brush_"..color, brush)
 end
 
@@ -350,7 +344,38 @@ function to_imagestring(data)
 end
 
 dirs = {
-   [0] = {x = 0, z = 1},
-   [1] = {x = 1, z = 0},
-   [2] = {x = 0, z =-1},
-   [3] = {x =-1, z = 0} }
+   [0] = { x = 0, z = 1 },
+   [1] = { x = 1, z = 0 },
+   [2] = { x = 0, z =-1 },
+   [3] = { x =-1, z = 0 } }
+
+function sub(v, w)
+   return { x = v.x - w.x,
+            y = v.y - w.y,
+            z = v.z - w.z }
+end
+
+function dot(v, w)
+   return  v.x * w.x + v.y * w.y + v.z * w.z
+end
+
+function intersect(pos, dir, origin, normal)
+   local t = -(dot(sub(pos, origin), normal)) / dot(dir, normal)
+   return { x = pos.x + dir.x * t,
+            y = pos.y + dir.y * t,
+            z = pos.z + dir.z * t }
+end
+
+function round(num)
+   return math.floor(num+0.5)
+end
+
+function clamp(num)
+   if num < 0 then
+      return 0
+   elseif num > 15 then
+      return 15
+   else
+      return num
+   end
+end
