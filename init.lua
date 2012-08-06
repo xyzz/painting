@@ -373,8 +373,8 @@ end
 function clamp(num)
    if num < 0 then
       return 0
-   elseif num > 15 then
-      return 15
+   elseif num > res-1 then
+      return res-1
    else
       return num
    end
