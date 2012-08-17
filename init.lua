@@ -91,13 +91,13 @@ picent = {
     local p = intersect(ppos, l, pos, normal)
 
     local off = -0.5
-    pos = { x = pos.x + off * od.x, y=pos.y + off, z=pos.z + off * od.z }
+    pos = { x = pos.x + off * od.x, y = pos.y + off, z = pos.z + off * od.z }
     p = sub(p, pos)
     local x = math.abs(p.x + p.z)
     local y = p.y
 
-    x = round(x/(1/res))
-    y = round((1-y)/(1/res))
+    x = round(x / (1/res))
+    y = round((1-y) / (1/res))
 
     x = clamp(x)
     y = clamp(y-1)
@@ -107,17 +107,12 @@ picent = {
   end,
 
   on_activate = function(self, staticdata)
-    local pos = self.object:getpos()
-    local meta = minetest.env:get_meta(pos)
-    local data = meta:get_string("painting:picturedata")
+    self.grid = minetest.deserialize(staticdata) or initgrid()
+    self.object:set_properties({textures = { to_imagestring(self.grid) }})
+  end,
 
-    if data == "" then
-      self.grid = initgrid()
-    else
-      data = minetest.deserialize(data)
-      data = to_imagestring(data)
-      self.object:set_properties({textures = { data }})
-    end
+  get_staticdata = function(self)
+    return minetest.serialize(self.grid)
   end
 }
 
