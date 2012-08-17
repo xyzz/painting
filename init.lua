@@ -128,10 +128,10 @@ paintedcanvas = {
     local dir = sub(pos, placerpos)
     local fd = minetest.dir_to_facedir(dir)
 
-    local pic = minetest.env:add_node(pos, { name = "painting:pic",
-                                             param2 = fd,
-                                             paramtype2 = "none" })
-
+    minetest.env:add_node(pos, { name = "painting:pic",
+                                 param2 = fd,
+                                 paramtype2 = "none" })
+    
     --save metadata
     local data = itemstack:get_metadata()
     local meta = minetest.env:get_meta(pos)
@@ -139,18 +139,18 @@ paintedcanvas = {
 
     --add entity
     dir = dirs[fd]
-    local off = 0.5-thickness-0.01
+    local off = 0.5 - thickness - 0.01
 
-    local np = { x = pos.x + dir.x*off,
-                 y = pos.y,
-                 z = pos.z + dir.z*off}
+    pos = { x = pos.x + dir.x * off,
+            y = pos.y,
+            z = pos.z + dir.z * off}
 
     data = minetest.deserialize(data)
     data = to_imagestring(data)
 
-    local p = minetest.env:add_entity(np, "painting:picent"):get_luaentity()
-    p.object:set_properties({textures = { data }})
-    p.object:setyaw(math.pi*fd/-2)
+    local p = minetest.env:add_entity(pos, "painting:picent"):get_luaentity()
+    p.object:set_properties({ textures = { data }})
+    p.object:setyaw(math.pi * fd / -2)
 
     return ItemStack("")
   end
