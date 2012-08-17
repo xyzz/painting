@@ -73,8 +73,13 @@ picent = {
   textures = { "white.png" },
 
   on_punch = function(self, puncher, time_from_last_punch, tool_capabilities, dir)
-    local ppos = puncher:getpos()
+    --check for brush
+    local name = puncher:get_wielded_item():get_name()
+    name = string.split(name, "_")[2]
+    if not textures[name] then return end
+    
     --get player eye level
+    local ppos = puncher:getpos()
     ppos = { x = ppos.x, y = ppos.y+(1.5 + 1/16), z = ppos.z }
 
     local pos = self.object:getpos()
@@ -97,13 +102,8 @@ picent = {
     x = clamp(x)
     y = clamp(y-1)
 
-    local name = puncher:get_wielded_item():get_name()
-    name = string.split(name, "_")[2]
-    local t = textures[name]
-    if t then
-      self.grid[x][y]=colors[name]
-      self.object:set_properties({textures = { to_imagestring(self.grid) }})
-    end
+    self.grid[x][y]=colors[name]
+    self.object:set_properties({textures = { to_imagestring(self.grid) }})
   end,
 
   on_activate = function(self, staticdata)
