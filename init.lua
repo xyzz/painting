@@ -182,19 +182,6 @@ canvasnode = {
 
   drop = "",
 
-  on_construct = function(pos)
-    local easel = minetest.env:get_node({ x = pos.x, y = pos.y - 1, z = pos.z})
-    local fd = easel.param2
-    local dir = dirs[fd]
-    pos = {x = pos.x - 0.01 * dir.x, y = pos.y, z = pos.z - 0.01 * dir.z}
-
-    local p = minetest.env:add_entity(pos, "painting:picent"):get_luaentity()
-    p.object:set_properties({ collisionbox = paintbox[fd%2] })
-    p.object:setyaw(math.pi*easel.param2/-2)
-    p.fd = easel.param2
-    p.grid = initgrid()
-  end,
-
   after_dig_node=function(pos, oldnode, oldmetadata, digger)
     --get data and remove pixels
     local data
@@ -247,13 +234,22 @@ easel = {
       return
     end
     local meta = minetest.env:get_meta(pos)
-    local np  = { x = pos.x, y = pos.y+1, z = pos.z }
+    local fd = node.param2
+    pos = { x = pos.x, y = pos.y + 1, z = pos.z }
 
-    if minetest.env:get_node(np).name == "air" then
-      minetest.env:add_node(np, { name = "painting:canvasnode",
-                                  param2 = node["param2"],
-                                  paramtype2 = "none" })
-    end
+    if minetest.env:get_node(pos).name ~= "air" then return end
+    minetest.env:add_node(pos, { name = "painting:canvasnode",
+                                 param2 = fd,
+                                 paramtype2 = "none" })
+    
+    local dir = dirs[fd]
+    pos = { x = pos.x - 0.01 * dir.x, y = pos.y, z = pos.z - 0.01 * dir.z }
+
+    local p = minetest.env:add_entity(pos, "painting:picent"):get_luaentity()
+    p.object:set_properties({ collisionbox = paintbox[fd%2] })
+    p.object:setyaw(math.pi * fd/-2)
+    p.grid = initgrid()
+    p.fd = fd
 
     meta:set_int("has_canvas", 1)
     local itemstack = ItemStack("painting:canvas")
