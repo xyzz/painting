@@ -64,8 +64,8 @@ picnode =  {
 
 -- picture texture entity
 
-paintbox1 = { -0.5,-0.5,0,0.5,0.5,0 }
-paintbox2 = { 0,-0.5,-0.5,0,0.5,0.5 }
+paintbox = { [0] = { -0.5,-0.5,0,0.5,0.5,0 },
+             [1] = { 0,-0.5,-0.5,0,0.5,0.5 } }
 
 picent = {
   collisionbox = { 0, 0, 0, 0, 0, 0 },
@@ -189,14 +189,10 @@ canvasnode = {
     pos = {x = pos.x - 0.01 * dir.x, y = pos.y, z = pos.z - 0.01 * dir.z}
 
     local p = minetest.env:add_entity(pos, "painting:picent"):get_luaentity()
+    p.object:set_properties({ collisionbox = paintbox[fd%2] })
     p.object:setyaw(math.pi*easel.param2/-2)
     p.fd = easel.param2
     p.grid = initgrid()
-    if fd == 0 or fd == 2 then
-      p.object:set_properties({ collisionbox = paintbox1 })
-    else
-      p.object:set_properties({ collisionbox = paintbox2 })
-    end
   end,
 
   after_dig_node=function(pos, oldnode, oldmetadata, digger)
