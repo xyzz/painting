@@ -130,7 +130,7 @@ paintedcanvas = {
     --place node
     local placerpos = placer:getpos()
     local pos = pointed_thing.above
-    local dir = {x = pos.x - placerpos.x, y = pos.y - placerpos.y, z = pos.z - placerpos.z}
+    local dir = sub(pos, placerpos)
     local fd = minetest.dir_to_facedir(dir)
 
     local pic = minetest.env:add_node(pos, { name = "painting:pic",
