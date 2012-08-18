@@ -7,7 +7,7 @@
 -- 2012 obneq aka jin xi
 
 -- a picture is drawn using a node(box) to draw the supporting canvas
--- and an entity which has the painting as it's texture.
+-- and an entity which has the painting as its texture.
 -- this texture is created by minetest-c55's internal image
 -- compositing engine (see tile.cpp).
 
@@ -22,7 +22,6 @@ textures = {
   darkgrey = "darkgrey.png", black = "black.png"
 }
 
-res = 16
 thickness = 0.1
 
 -- picture node
@@ -63,11 +62,27 @@ picnode =  {
 }
 
 -- picture texture entity
+picent = {
+  collisionbox = { 0, 0, 0, 0, 0, 0 },
+  visual = "upright_sprite",
+  textures = { "white.png" },
+
+  on_activate = function(self, staticdata)
+      local pos = self.object:getpos()
+      local meta = minetest.env:get_meta(pos)
+      local data = meta:get_string("painting:picturedata")
+      data = minetest.deserialize(data)
+
+      if not data.grid then return end
+      self.object:set_properties({textures = { to_imagestring(data.grid, data.res) }})
+  end
+}
+
 
 paintbox = { [0] = { -0.5,-0.5,0,0.5,0.5,0 },
              [1] = { 0,-0.5,-0.5,0,0.5,0.5 } }
 
-picent = {
+paintent = {
   collisionbox = { 0, 0, 0, 0, 0, 0 },
   visual = "upright_sprite",
   textures = { "white.png" },
@@ -96,23 +111,29 @@ picent = {
     local x = math.abs(p.x + p.z)
     local y = p.y
 
-    x = round(x / (1/res))
-    y = round((1-y) / (1/res))
+    x = round(x / (1/self.res))
+    y = round((1-y) / (1/self.res))
 
-    x = clamp(x)
-    y = clamp(y-1)
+    x = clamp(x, self.res)
+    y = clamp(y-1, self.res)
 
     self.grid[x][y]=colors[name]
-    self.object:set_properties({textures = { to_imagestring(self.grid) }})
+    self.object:set_properties({textures = { to_imagestring(self.grid, self.res) }})
   end,
 
   on_activate = function(self, staticdata)
-    self.grid = minetest.deserialize(staticdata) or initgrid()
-    self.object:set_properties({textures = { to_imagestring(self.grid) }})
+    local data = minetest.deserialize(staticdata)
+    if not data then return end
+    self.fd = data.fd
+    self.res = data.res
+    self.grid = data.grid
+    self.object:set_properties({ textures = { to_imagestring(self.grid, self.res) }})
+    self.object:set_properties({ collisionbox = paintbox[self.fd%2] })
   end,
 
   get_staticdata = function(self)
-    return minetest.serialize(self.grid)
+    local data = { fd = self.fd, res = self.res, grid = self.grid }
+    return minetest.serialize(data)
   end
 }
 
@@ -143,13 +164,12 @@ paintedcanvas = {
 
     pos = { x = pos.x + dir.x * off,
             y = pos.y,
-            z = pos.z + dir.z * off}
+            z = pos.z + dir.z * off }
 
     data = minetest.deserialize(data)
-    data = to_imagestring(data)
 
     local p = minetest.env:add_entity(pos, "painting:picent"):get_luaentity()
-    p.object:set_properties({ textures = { data }})
+    p.object:set_properties({ textures = { to_imagestring(data.grid, data.res) }})
     p.object:setyaw(math.pi * fd / -2)
 
     return ItemStack("")
@@ -184,17 +204,18 @@ canvasnode = {
 
   after_dig_node=function(pos, oldnode, oldmetadata, digger)
     --get data and remove pixels
-    local data
+    local data = {}
     local objects = minetest.env:get_objects_inside_radius(pos, 0.5)
     for _, e in ipairs(objects) do
       e = e:get_luaentity()
       if e.grid then
-        data = e.grid
+        data.grid = e.grid
+        data.res = e.res
       end
       e.object:remove()
     end
 
-    if data then
+    if data.grid then
       local item = { name = "painting:paintedcanvas", count = 1, metadata = minetest.serialize(data) }
       digger:get_inventory():add_item("main", item)
     end
@@ -230,7 +251,12 @@ easel = {
 
   on_punch = function(pos, node, player)
     local wielded = player:get_wielded_item():get_name()
-    if wielded ~= "painting:canvas" then
+    wielded = string.split(wielded, "_")
+
+    local name = wielded[1]
+    local res = tonumber(wielded[2])
+
+    if name ~= "painting:canvas" then
       return
     end
     local meta = minetest.env:get_meta(pos)
@@ -245,10 +271,11 @@ easel = {
     local dir = dirs[fd]
     pos = { x = pos.x - 0.01 * dir.x, y = pos.y, z = pos.z - 0.01 * dir.z }
 
-    local p = minetest.env:add_entity(pos, "painting:picent"):get_luaentity()
+    local p = minetest.env:add_entity(pos, "painting:paintent"):get_luaentity()
     p.object:set_properties({ collisionbox = paintbox[fd%2] })
-    p.object:setyaw(math.pi * fd/-2)
-    p.grid = initgrid()
+    p.object:setyaw(math.pi * fd / -2)
+    p.grid = initgrid(res)
+    p.res = res
     p.fd = fd
 
     meta:set_int("has_canvas", 1)
@@ -273,7 +300,7 @@ brush = {
   description = "brush",
   inventory_image = "default_tool_steelaxe.png",
   wield_image = "",
-  wield_scale = {x=1,y=1,z=1},
+  wield_scale = { x = 1, y = 1, z = 1 },
   stack_max = 99,
   liquids_pointable = false,
   tool_capabilities = {
@@ -286,8 +313,12 @@ brush = {
 minetest.register_entity("painting:picent", picent)
 minetest.register_node("painting:pic", picnode)
 
-minetest.register_craftitem("painting:canvas", canvas)
+minetest.register_craftitem("painting:canvas_16", canvas)
+minetest.register_craftitem("painting:canvas_32", canvas)
+minetest.register_craftitem("painting:canvas_64", canvas)
+
 minetest.register_craftitem("painting:paintedcanvas", paintedcanvas)
+minetest.register_entity("painting:paintent", paintent)
 minetest.register_node("painting:canvasnode", canvasnode)
 
 minetest.register_node("painting:easel", easel)
@@ -306,24 +337,24 @@ for i, color in ipairs(revcolors) do
 end
 
 minetest.register_alias("easel", "painting:easel")
-minetest.register_alias("canvas", "painting:canvas")
+minetest.register_alias("canvas", "painting:canvas_16")
 
-function initgrid()
+function initgrid(res)
   local grid, x, y = {}
-  for x = 0, res-1 do
+  for x = 0, res - 1 do
     grid[x] = {}
-    for y = 0, res-1 do
+    for y = 0, res - 1 do
       grid[x][y] = colors["white"]
     end
   end
   return grid
 end
 
-function to_imagestring(data)
+function to_imagestring(data, res)
   if not data then return end
   local imagestring = "[combine:"..res.."x"..res..":"
-  for y = 0, res-1 do
-    for x = 0, res-1 do
+  for y = 0, res - 1 do
+    for x = 0, res - 1 do
       imagestring  = imagestring..x..","..y.."="..revcolors[ data[x][y] ]..".png:"
     end
   end
@@ -357,11 +388,11 @@ function round(num)
   return math.floor(num+0.5)
 end
 
-function clamp(num)
+function clamp(num, res)
   if num < 0 then
     return 0
-  elseif num > res-1 then
-    return res-1
+  elseif num > res - 1 then
+    return res - 1
   else
     return num
   end
