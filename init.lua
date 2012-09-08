@@ -31,7 +31,7 @@ picbox = {
 }
 
 picnode =  {
-  description = "pic",
+  description = "Picture",
   tiles = { "white.png" },
   inventory_image = "painted.png",
   drawtype = "nodebox",
@@ -143,6 +143,7 @@ paintent = {
 
 --paintedcanvas picture inventory item
 paintedcanvas = {
+  description = "Painted Canvas",
   inventory_image = "painted.png",
   stack_max = 1,
 
@@ -182,6 +183,7 @@ paintedcanvas = {
 
 --canvas inventory item
 canvas = {
+  description = "Canvas",
   inventory_image = "default_paper.png",
   stack_max = 99,
 }
@@ -193,7 +195,7 @@ canvasbox = {
 }
 
 canvasnode = {
-  description = "canvas",
+  description = "Canvas",
   tiles = { "white.png" },
   inventory_image = "painted.png",
   drawtype = "nodebox",
@@ -242,7 +244,7 @@ easelbox = {
 }
 
 easel = {
-  description = "easel",
+  description = "Easel",
   tiles = { "default_wood.png" },
   drawtype = "nodebox",
   sunlight_propagates = true,

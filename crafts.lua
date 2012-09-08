@@ -14,13 +14,13 @@ minetest.register_craft({
          { 'default:stick','', 'default:stick' },
       }})
 
-minetest.register_craft({
+--[[minetest.register_craft({
       output = 'painting:palette 1',
       recipe = {
          { 'group:dye', 'group:dye', 'group:dye' },
          { 'group:dye', '', 'group:dye' },
          { 'group:dye', 'group:dye', 'group:dye' },
-      }})
+      }})]]
 
 minetest.register_craft({
       output = 'painting:canvas_16 1',
