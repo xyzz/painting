@@ -141,6 +141,9 @@ paintent = {
   end
 }
 
+-- just pure magic
+local walltoface = {-1, -1, 1, 3, 0, 2}
+
 --paintedcanvas picture inventory item
 paintedcanvas = {
   description = "Painted Canvas",
@@ -149,10 +152,21 @@ paintedcanvas = {
 
   on_place = function(itemstack, placer, pointed_thing)
     --place node
-    local placerpos = placer:getpos()
     local pos = pointed_thing.above
-    local dir = sub(pos, placerpos)
-    local fd = minetest.dir_to_facedir(dir)
+
+    local under = pointed_thing.under
+    local above = pointed_thing.above
+    local dir = {
+      x = under.x - above.x,
+      y = under.y - above.y,
+      z = under.z - above.z
+    }
+    local wm = minetest.dir_to_wallmounted(dir)
+
+    local fd = walltoface[wm + 1]
+    if fd == -1 then
+      return itemstack
+    end
 
     minetest.env:add_node(pos, { name = "painting:pic",
                                  param2 = fd,
