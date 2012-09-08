@@ -19,13 +19,32 @@ minetest.register_craft({
       recipe = {
          { 'group:dye', 'group:dye', 'group:dye' },
          { 'group:dye', '', 'group:dye' },
-         { 'group:dye', 'group:dye', 'group:dye' },       
+         { 'group:dye', 'group:dye', 'group:dye' },
       }})
 
 minetest.register_craft({
-      output = 'painting:canvas 1',
+      output = 'painting:canvas_16 1',
+      recipe = {
+         { '', '', '' },
+         { '', '', '' },
+         { 'default:paper', '', '' },
+      }})
+
+--[[
+--other sizes work bad =(
+minetest.register_craft({
+      output = 'painting:canvas_32 1',
+      recipe = {
+         { '', '', '' },
+         { 'default:paper', 'default:paper', '' },
+         { 'default:paper', 'default:paper', '' },
+      }})
+
+minetest.register_craft({
+      output = 'painting:canvas_64 1',
       recipe = {
          { 'default:paper', 'default:paper', 'default:paper' },
          { 'default:paper', 'default:paper', 'default:paper' },
          { 'default:paper', 'default:paper', 'default:paper' },
       }})
+]]

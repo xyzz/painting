@@ -17,7 +17,7 @@ textures = {
   white = "white.png", yellow = "yellow.png",
   orange = "orange.png", red = "red.png",
   violet = "violet.png", blue = "blue.png",
-  green = "green.png", magenta = "pink.png",
+  green = "green.png", magenta = "magenta.png",
   cyan = "cyan.png", lightgrey = "lightgrey.png",
   darkgrey = "darkgrey.png", black = "black.png"
 }
@@ -92,7 +92,7 @@ paintent = {
     local name = puncher:get_wielded_item():get_name()
     name = string.split(name, "_")[2]
     if not textures[name] then return end
-    
+
     --get player eye level
     local ppos = puncher:getpos()
     ppos = { x = ppos.x, y = ppos.y+(1.5 + 1/16), z = ppos.z }
@@ -119,6 +119,10 @@ paintent = {
 
     self.grid[x][y]=colors[name]
     self.object:set_properties({textures = { to_imagestring(self.grid, self.res) }})
+
+    local wielded = puncher:get_wielded_item()
+    wielded:add_wear(65535/256)
+    puncher:set_wielded_item(wielded)
   end,
 
   on_activate = function(self, staticdata)
@@ -152,7 +156,7 @@ paintedcanvas = {
     minetest.env:add_node(pos, { name = "painting:pic",
                                  param2 = fd,
                                  paramtype2 = "none" })
-    
+
     --save metadata
     local data = itemstack:get_metadata()
     local meta = minetest.env:get_meta(pos)
@@ -250,8 +254,8 @@ easel = {
   groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2 },
 
   on_punch = function(pos, node, player)
-    local wielded = player:get_wielded_item():get_name()
-    wielded = string.split(wielded, "_")
+    local wielded_raw = player:get_wielded_item():get_name()
+    wielded = string.split(wielded_raw, "_")
 
     local name = wielded[1]
     local res = tonumber(wielded[2])
@@ -267,7 +271,7 @@ easel = {
     minetest.env:add_node(pos, { name = "painting:canvasnode",
                                  param2 = fd,
                                  paramtype2 = "none" })
-    
+
     local dir = dirs[fd]
     pos = { x = pos.x - 0.01 * dir.x, y = pos.y, z = pos.z - 0.01 * dir.z }
 
@@ -279,7 +283,7 @@ easel = {
     p.fd = fd
 
     meta:set_int("has_canvas", 1)
-    local itemstack = ItemStack("painting:canvas")
+    local itemstack = ItemStack(wielded_raw)
     player:get_inventory():remove_item("main", itemstack)
   end,
 
@@ -295,6 +299,14 @@ easel = {
 }
 
 --brushes
+
+local function table_copy(t)
+  local t2 = {}
+  for k,v in pairs(t) do
+    t2[k] = v
+  end
+  return t2
+end
 
 brush = {
   description = "brush",
@@ -314,8 +326,8 @@ minetest.register_entity("painting:picent", picent)
 minetest.register_node("painting:pic", picnode)
 
 minetest.register_craftitem("painting:canvas_16", canvas)
-minetest.register_craftitem("painting:canvas_32", canvas)
-minetest.register_craftitem("painting:canvas_64", canvas)
+--minetest.register_craftitem("painting:canvas_32", canvas)
+--minetest.register_craftitem("painting:canvas_64", canvas)
 
 minetest.register_craftitem("painting:paintedcanvas", paintedcanvas)
 minetest.register_entity("painting:paintent", paintent)
@@ -328,8 +340,18 @@ revcolors = {}
 
 for color, _ in pairs(textures) do
   table.insert(revcolors, color)
-
-  minetest.register_tool("painting:brush_"..color, brush)
+  local brush_new = table_copy(brush)
+  brush_new.description = color:gsub("^%l", string.upper).." brush"
+  brush_new.inventory_image = "painting_brush_"..color..".png"
+  minetest.register_tool("painting:brush_"..color, brush_new)
+  minetest.register_craft({
+    output = "painting:brush_"..color,
+    recipe = {
+      {"group:unicolor_"..color},
+      {"default:stick"},
+      {"default:stick"}
+    }
+  })
 end
 
 for i, color in ipairs(revcolors) do
