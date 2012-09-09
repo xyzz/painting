@@ -363,7 +363,7 @@ for color, _ in pairs(textures) do
   minetest.register_craft({
     output = "painting:brush_"..color,
     recipe = {
-      {"group:unicolor_"..color},
+      {"dye:"..color},
       {"default:stick"},
       {"default:stick"}
     }
