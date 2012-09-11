@@ -18,8 +18,10 @@ textures = {
   orange = "orange.png", red = "red.png",
   violet = "violet.png", blue = "blue.png",
   green = "green.png", magenta = "magenta.png",
-  cyan = "cyan.png", lightgrey = "lightgrey.png",
-  darkgrey = "darkgrey.png", black = "black.png"
+  cyan = "cyan.png", grey = "grey.png",
+  darkgrey = "darkgrey.png", black = "black.png",
+  darkgreen = "darkgreen.png", brown="brown.png",
+  pink = "pink.png"
 }
 
 thickness = 0.1
@@ -72,7 +74,6 @@ picent = {
       local meta = minetest.env:get_meta(pos)
       local data = meta:get_string("painting:picturedata")
       data = minetest.deserialize(data)
-
       if not data.grid then return end
       self.object:set_properties({textures = { to_imagestring(data.grid, data.res) }})
   end
